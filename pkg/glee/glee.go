@@ -47,6 +47,21 @@ func ListExcludes() error {
 	return scanner.Err()
 }
 
+func ClearExcludes() error {
+	root, err := findClosestGitRoot()
+	if err != nil {
+		return err
+	}
+
+	f, err := os.OpenFile(getRootExcludeFile(root), os.O_TRUNC, 0644)
+	if err != nil {
+		return fmt.Errorf("cannot truncate exclude file: %w", err)
+	}
+	defer f.Close()
+
+	return nil
+}
+
 func excludeEntry(entry, root string) error {
 	base, err := os.Getwd()
 	if err != nil {
