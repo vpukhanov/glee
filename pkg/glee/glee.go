@@ -1,11 +1,13 @@
 package glee
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 )
 
 func AddExcludes(entries []string) error {
@@ -21,6 +23,28 @@ func AddExcludes(entries []string) error {
 	}
 
 	return nil
+}
+
+func ListExcludes() error {
+	root, err := findClosestGitRoot()
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Open(getRootExcludeFile(root))
+	if err != nil {
+		return fmt.Errorf("cannot open exclude file: %w", err)
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		if line := scanner.Text(); len(line) > 0 && !strings.HasPrefix(line, "#") {
+			fmt.Println(line)
+		}
+	}
+
+	return scanner.Err()
 }
 
 func excludeEntry(entry, root string) error {
