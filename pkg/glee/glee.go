@@ -93,7 +93,7 @@ func findClosestGitRoot() (string, error) {
 		return "", fmt.Errorf("cannot get current working directory: %w", err)
 	}
 
-	for current != "." {
+	for current != "/" {
 		candidate := path.Join(current, ".git")
 
 		if stat, err := os.Stat(candidate); err == nil && stat.IsDir() {
