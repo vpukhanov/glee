@@ -20,7 +20,7 @@ builds:
 archives:
   - format: tar.gz
     name_template: >-
-      {{ .ProjectName }}_
+      {{ .ProjectName }}_{{ .Version }}_
       {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "386" }}i386
@@ -59,3 +59,20 @@ changelog:
       order: 1
     - title: Others
       order: 999
+
+brews:
+  - name: glee
+    repository:
+      owner: vpukhanov
+      name: homebrew-tools
+      token: '{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}'
+    homepage: 'https://github.com/vpukhanov/glee'
+    description: "CLI tool to manage Git's local exclude patterns"
+    license: 'MIT'
+    test: |
+      system "#{bin}/glee version"
+    install: |
+      bin.install "glee"
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com

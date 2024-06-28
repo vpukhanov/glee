@@ -2,9 +2,7 @@
 
 Glee is a command-line utility that simplifies the management of Git's local exclude patterns. It provides an intuitive interface for manipulating the `.git/info/exclude` file, which functions similarly to `.gitignore` but remains entirely local and is not shared with the repository.
 
-
 [Learn more about .git/info/exclude in the Git documentation](https://git-scm.com/docs/gitignore)
-
 
 ## Usage
 
@@ -48,8 +46,8 @@ This will download the source code, compile it, and install the `glee` binary in
 1. Visit the [Releases page](https://github.com/vpukhanov/glee/releases) of the repository.
 2. Download the archive for your operating system and architecture.
 3. Extract the archive:
-   - On macOS: Double-click the .zip file or use unzip glee\*\*\*\*.zip
-   - On Linux: tar -xzf glee\*\*\*\*.tar.gz
+   - On macOS: Double-click the .zip file or use `unzip glee_*_Darwin_*.zip`
+   - On Linux: `tar -xzf glee_*_Linux_*.tar.gz`
    - On Windows: Extract the .zip file using File Explorer or a tool like 7-Zip
 4. Move the `glee` binary to a directory in your system's `PATH`.
 
