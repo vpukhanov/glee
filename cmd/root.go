@@ -7,12 +7,13 @@ import (
 )
 
 var (
-	version = "1.0.0" // This can be set during build time
+	version = "dev" // This can be set during build time
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "glee",
-	Short: "glee - exclude files from git tracking without adding them to .gitignore",
+	Use:     "glee",
+	Short:   "glee - exclude files from git tracking without adding them to .gitignore",
+	Version: version,
 }
 
 func Execute() {
