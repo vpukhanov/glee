@@ -6,6 +6,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	version = "1.0.0" // This can be set during build time
+)
+
 var rootCmd = &cobra.Command{
 	Use:   "glee",
 	Short: "glee - exclude files from git tracking without adding them to .gitignore",
