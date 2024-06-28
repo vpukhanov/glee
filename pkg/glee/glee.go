@@ -6,21 +6,29 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
 )
 
+var ErrGitRepoNotFound = errors.New("git repository not found")
+var ErrNoEditorAvailable = errors.New("unable to open exclude file with any available text editor")
+
 func AddExcludes(entries []string) error {
-	root, err := findClosestGitRoot()
+	root, excludeFile, err := getGitRootAndExcludePath()
 	if err != nil {
 		return err
 	}
 
+	f, err := os.OpenFile(excludeFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("opening exclude file: %w", err)
+	}
+	defer f.Close()
+
 	for _, entry := range entries {
-		if err := excludeEntry(entry, root); err != nil {
-			return err
+		if err := excludeEntry(entry, root, f); err != nil {
+			return fmt.Errorf("excluding entry %q: %w", entry, err)
 		}
 	}
 
@@ -28,20 +36,21 @@ func AddExcludes(entries []string) error {
 }
 
 func ListExcludes() error {
-	root, err := findClosestGitRoot()
+	_, excludeFile, err := getGitRootAndExcludePath()
 	if err != nil {
 		return err
 	}
 
-	f, err := os.Open(getRootExcludeFile(root))
+	f, err := os.Open(excludeFile)
 	if err != nil {
-		return fmt.Errorf("cannot open exclude file: %w", err)
+		return fmt.Errorf("opening exclude file: %w", err)
 	}
 	defer f.Close()
 
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
-		if line := scanner.Text(); len(line) > 0 && !strings.HasPrefix(line, "#") {
+		line := strings.TrimSpace(scanner.Text())
+		if line != "" && !strings.HasPrefix(line, "#") {
 			fmt.Println(line)
 		}
 	}
@@ -50,89 +59,80 @@ func ListExcludes() error {
 }
 
 func ClearExcludes() error {
-	root, err := findClosestGitRoot()
+	_, excludeFile, err := getGitRootAndExcludePath()
 	if err != nil {
 		return err
 	}
 
-	f, err := os.OpenFile(getRootExcludeFile(root), os.O_TRUNC, 0644)
-	if err != nil {
-		return fmt.Errorf("cannot truncate exclude file: %w", err)
+	if err := os.Truncate(excludeFile, 0); err != nil {
+		return fmt.Errorf("truncating exclude file: %w", err)
 	}
-	defer f.Close()
 
 	return nil
 }
 
 func EditExcludes() error {
-	root, err := findClosestGitRoot()
+	_, excludeFile, err := getGitRootAndExcludePath()
 	if err != nil {
 		return err
 	}
 
-	excludeFile := getRootExcludeFile(root)
-	_, err = os.Stat(excludeFile)
-	if err != nil {
-		return fmt.Errorf("cannot access exclude file: %w", err)
+	if _, err := os.Stat(excludeFile); err != nil {
+		return fmt.Errorf("accessing exclude file: %w", err)
 	}
 
 	for _, editor := range getEditorsList() {
 		cmd := exec.Command(editor, excludeFile)
-		err := cmd.Start()
-		if err == nil {
-			return nil // Successfully opened the file
+		if err := cmd.Start(); err == nil {
+			return nil
 		}
 	}
 
-	return errors.New("unable to open exclude file with any available text editor")
+	return ErrNoEditorAvailable
 }
 
-func excludeEntry(entry, root string) error {
+func excludeEntry(entry, root string, f *os.File) error {
 	base, err := os.Getwd()
 	if err != nil {
-		return fmt.Errorf("cannot get current working directory: %w", err)
+		return fmt.Errorf("getting current working directory: %w", err)
 	}
 
-	absolute := path.Join(base, entry)
+	absolute := filepath.Join(base, entry)
 	relative, err := filepath.Rel(root, absolute)
 	if err != nil {
-		return fmt.Errorf("cannot build a relative exclude path: %w", err)
+		return fmt.Errorf("building relative exclude path: %w", err)
 	}
 
-	f, err := os.OpenFile(getRootExcludeFile(root), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return fmt.Errorf("cannot open exclude file: %w", err)
-	}
-	defer f.Close()
-
-	if _, err = f.Write([]byte(relative + "\n")); err != nil {
-		return fmt.Errorf("cannot write to exclude file: %w", err)
+	if _, err := fmt.Fprintln(f, relative); err != nil {
+		return fmt.Errorf("writing to exclude file: %w", err)
 	}
 
 	return nil
 }
 
-func findClosestGitRoot() (string, error) {
-	current, err := os.Getwd()
+func getGitRootAndExcludePath() (string, string, error) {
+	root, err := findClosestGitRoot()
 	if err != nil {
-		return "", fmt.Errorf("cannot get current working directory: %w", err)
+		return "", "", fmt.Errorf("finding git root: %w", err)
 	}
-
-	for current != "/" {
-		candidate := path.Join(current, ".git")
-
-		if stat, err := os.Stat(candidate); err == nil && stat.IsDir() {
-			return current, nil
-		}
-
-		current = filepath.Dir(current)
-	}
-
-	return "", errors.New("git repository not found")
+	excludePath := filepath.Join(root, ".git", "info", "exclude")
+	return root, excludePath, nil
 }
 
-func getRootExcludeFile(root string) string {
-	return path.Join(root, ".git", "info", "exclude")
+func findClosestGitRoot() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("getting current working directory: %w", err)
+	}
+
+	for dir != "/" {
+		if _, err := os.Stat(filepath.Join(dir, ".git")); err == nil {
+			return dir, nil
+		}
+		dir = filepath.Dir(dir)
+	}
+
+	return "", ErrGitRepoNotFound
 }
 
 func getEditorsList() []string {
