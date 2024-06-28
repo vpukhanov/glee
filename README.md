@@ -31,6 +31,20 @@ glee help
 
 ## Installation
 
+### Using Homebrew (macOS and Linux)
+
+If you have Homebrew installed, you can install glee using:
+
+```sh
+brew install vpukhanov/tools/glee
+```
+
+To update glee to the latest version:
+
+```sh
+brew upgrade glee
+```
+
 ### Using Go
 
 If you have Go installed on your system, you can install `glee` directly using the `go install` command:
