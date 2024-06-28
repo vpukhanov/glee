@@ -31,7 +31,6 @@ archives:
         format: zip
       - goos: darwin
         format: zip
-    rlcp: true
     files:
       - README.md
       - LICENSE*
