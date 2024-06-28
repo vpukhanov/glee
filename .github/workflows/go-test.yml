@@ -33,6 +33,7 @@ jobs:
         run: go test -race -v ./...
 
       - name: Check gofmt
+        if: runner.os == 'Linux'
         run: |
           if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
             echo "The following files are not gofmt'd:"
