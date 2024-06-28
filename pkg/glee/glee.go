@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -62,6 +64,29 @@ func ClearExcludes() error {
 	return nil
 }
 
+func EditExcludes() error {
+	root, err := findClosestGitRoot()
+	if err != nil {
+		return err
+	}
+
+	excludeFile := getRootExcludeFile(root)
+	_, err = os.Stat(excludeFile)
+	if err != nil {
+		return fmt.Errorf("cannot access exclude file: %w", err)
+	}
+
+	for _, editor := range getEditorsList() {
+		cmd := exec.Command(editor, excludeFile)
+		err := cmd.Start()
+		if err == nil {
+			return nil // Successfully opened the file
+		}
+	}
+
+	return errors.New("unable to open exclude file with any available text editor")
+}
+
 func excludeEntry(entry, root string) error {
 	base, err := os.Getwd()
 	if err != nil {
@@ -108,4 +133,25 @@ func findClosestGitRoot() (string, error) {
 
 func getRootExcludeFile(root string) string {
 	return path.Join(root, ".git", "info", "exclude")
+}
+
+func getEditorsList() []string {
+	var editors []string
+
+	// Check for $EDITOR environment variable
+	if envEditor := os.Getenv("EDITOR"); envEditor != "" {
+		editors = append(editors, envEditor)
+	}
+
+	// Add default system editors
+	switch runtime.GOOS {
+	case "darwin":
+		editors = append(editors, "open", "TextEdit", "vim", "nano")
+	case "windows":
+		editors = append(editors, "notepad", "wordpad")
+	default: // Linux and other Unix-like systems
+		editors = append(editors, "xdg-open", "gedit", "kate", "kwrite", "nano", "vim", "emacs")
+	}
+
+	return editors
 }

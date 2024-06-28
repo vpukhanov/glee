@@ -21,5 +21,8 @@ This command-line utility lets you manipulate .git repository's `info/exclude` f
     # Clear the exclude list
     glee clear
 
+    # Open exclude file in the text editor
+    glee edit
+
     # Display help
     glee help
