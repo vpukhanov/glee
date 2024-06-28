@@ -17,18 +17,24 @@ builds:
     ldflags:
       - -s -w -X github.com/vpukhanov/glee/cmd.version={{.Version}}
 
-# Archiving the built binaries
 archives:
-  - replacements:
-      darwin: macOS
-      linux: Linux
-      windows: Windows
-      amd64: x86_64
+  - format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
     format_overrides:
       - goos: windows
         format: zip
       - goos: darwin
         format: zip
+    rlcp: true
+    files:
+      - README.md
+      - LICENSE*
 
 checksum:
   name_template: 'checksums.txt'
