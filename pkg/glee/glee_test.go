@@ -49,7 +49,7 @@ func TestAddExcludes(t *testing.T) {
 		t.Fatalf("Failed to read exclude file: %v", err)
 	}
 
-	expectedContent := "file1.txt\ndir/file2.txt\n"
+	expectedContent := filepath.FromSlash("file1.txt\ndir/file2.txt\n")
 	if string(content) != expectedContent {
 		t.Errorf("Exclude file content mismatch. Expected:\n%s\nGot:\n%s", expectedContent, string(content))
 	}
