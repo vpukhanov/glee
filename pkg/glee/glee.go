@@ -35,6 +35,49 @@ func AddExcludes(entries []string) error {
 	return nil
 }
 
+func RemoveExcludes(entries []string) error {
+	_, excludeFile, err := getGitRootAndExcludePath()
+	if err != nil {
+		return err
+	}
+
+	content, err := os.ReadFile(excludeFile)
+	if err != nil {
+		return fmt.Errorf("reading exclude file: %w", err)
+	}
+
+	lines := strings.Split(strings.TrimRight(string(content), "\n"), "\n")
+	var newLines []string
+
+	for _, line := range lines {
+		trimmedLine := strings.TrimSpace(line)
+		if trimmedLine == "" || strings.HasPrefix(trimmedLine, "#") {
+			newLines = append(newLines, line)
+			continue
+		}
+
+		shouldKeep := true
+		for _, entry := range entries {
+			if trimmedLine == entry {
+				shouldKeep = false
+				break
+			}
+		}
+
+		if shouldKeep {
+			newLines = append(newLines, line)
+		}
+	}
+
+	newContent := strings.Join(newLines, "\n") + "\n"
+
+	if err := os.WriteFile(excludeFile, []byte(newContent), 0644); err != nil {
+		return fmt.Errorf("writing updated exclude file: %w", err)
+	}
+
+	return nil
+}
+
 func ListExcludes() error {
 	_, excludeFile, err := getGitRootAndExcludePath()
 	if err != nil {
