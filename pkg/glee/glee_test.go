@@ -55,6 +55,55 @@ func TestAddExcludes(t *testing.T) {
 	}
 }
 
+func TestRemoveExcludes(t *testing.T) {
+	tempDir, cleanup := setupTestRepo(t)
+	defer cleanup()
+
+	// Change to the temp directory
+	oldWd, _ := os.Getwd()
+	os.Chdir(tempDir)
+	defer os.Chdir(oldWd)
+
+	// Add some excludes
+	excludeFile := filepath.Join(tempDir, ".git", "info", "exclude")
+	content := "file1.txt\n# Comment\ndir/file2.txt\nfile3.txt\n"
+	if err := os.WriteFile(excludeFile, []byte(content), 0644); err != nil {
+		t.Fatalf("Failed to write initial exclude file: %v", err)
+	}
+
+	// Remove some excludes
+	entriesToRemove := []string{"file1.txt", "dir/file2.txt"}
+	if err := RemoveExcludes(entriesToRemove); err != nil {
+		t.Fatalf("RemoveExcludes failed: %v", err)
+	}
+
+	// Check the content of the exclude file after removal
+	newContent, err := os.ReadFile(excludeFile)
+	if err != nil {
+		t.Fatalf("Failed to read exclude file after removal: %v", err)
+	}
+
+	expectedContent := "# Comment\nfile3.txt\n"
+	if string(newContent) != expectedContent {
+		t.Errorf("Exclude file content mismatch after removal. Expected:\n%q\nGot:\n%q", expectedContent, string(newContent))
+	}
+
+	// Try to remove a non-existent entry (should not error)
+	if err := RemoveExcludes([]string{"non-existent-file.txt"}); err != nil {
+		t.Errorf("RemoveExcludes errored on non-existent entry: %v", err)
+	}
+
+	// Check content hasn't changed
+	newContent, err = os.ReadFile(excludeFile)
+	if err != nil {
+		t.Fatalf("Failed to read exclude file after non-existent removal: %v", err)
+	}
+
+	if string(newContent) != expectedContent {
+		t.Errorf("Exclude file content changed after non-existent removal. Expected:\n%q\nGot:\n%q", expectedContent, string(newContent))
+	}
+}
+
 func TestListExcludes(t *testing.T) {
 	tempDir, cleanup := setupTestRepo(t)
 	defer cleanup()

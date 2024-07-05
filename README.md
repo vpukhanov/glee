@@ -16,6 +16,15 @@ glee add *.txt
 # Add a glob pattern itself to the exclude list (escaping the special character)
 glee add \*.txt
 
+# Remove specific files from the exclude list
+glee remove filename1 filename2
+
+# Remove multiple files using a glob pattern
+glee remove *.txt
+
+# Remove a glob pattern itself from the exclude list (escaping the special character)
+glee remove \*.txt
+
 # Display current entries in the exclude list
 glee list
 
